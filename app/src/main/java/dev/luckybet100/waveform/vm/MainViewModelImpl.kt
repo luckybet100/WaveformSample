@@ -126,6 +126,7 @@ class MainViewModelImpl(
                 runAnimation {
                     val oldState = waveFormState.value
                     if (oldState is WaveFormViewModel.State.Result) {
+                        mediaHelper.preparePlayer(audioFile.absolutePath)
                         mediaHelper.startPlayer()
                         setPlayingState()
                         animation?.cancel()
@@ -271,7 +272,6 @@ class MainViewModelImpl(
         state.value = State.Result
         playingIcon.value = MainViewModel.PlayingIcon.Play
         playingText.value = getApplication<Application>().getString(R.string.play_record)
-        mediaHelper.preparePlayer(audioFile.absolutePath)
     }
 
     private fun setPlayingState() {
