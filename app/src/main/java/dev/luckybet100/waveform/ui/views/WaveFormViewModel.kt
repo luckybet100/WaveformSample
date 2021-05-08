@@ -33,7 +33,7 @@ interface WaveFormViewModel {
                 itemsOnScreen: Int
             ): Float {
                 val amplitude = amplitudes.getOrNull(position) ?: 0
-                val newHeight = max(minHeight, maxHeight * sqrt(amplitude / 32767f))
+                val newHeight = max(minHeight, maxHeight * (amplitude / 32767f))
                 val oldHeight = prevState.getHeight(position, minHeight, maxHeight, itemsOnScreen)
                 return oldHeight + (newHeight - oldHeight) * progress
             }
@@ -60,7 +60,7 @@ interface WaveFormViewModel {
             ): Float {
                 val startIdx = max(0, getPosition(globalOffset) - itemsOnScreen)
                 val amplitude = amplitudes.getOrNull(startIdx + position) ?: 0
-                val height = maxHeight * sqrt(amplitude / 32768f)
+                val height = maxHeight * (amplitude / 32768f)
                 var progress = max(0f, min(5f, globalOffset - (startIdx + position))) / 5f
                 progress = progress * progress * (3.0f - 2.0f * progress);
                 return max(minHeight, height * progress)
@@ -99,7 +99,7 @@ interface WaveFormViewModel {
                 for (index in left until right)
                     amplitude += amplitudes.getOrNull(index) ?: 0
                 amplitude /= (right - left)
-                val newHeight = max(minHeight, maxHeight * sqrt(amplitude / 32768f))
+                val newHeight = max(minHeight, maxHeight * (amplitude / 32768f))
                 val oldHeight = prevState.getHeight(position, minHeight, maxHeight, itemsOnScreen)
                 return oldHeight + (newHeight - oldHeight) * progress
             }

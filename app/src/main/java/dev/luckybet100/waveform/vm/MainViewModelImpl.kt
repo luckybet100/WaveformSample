@@ -3,7 +3,7 @@ package dev.luckybet100.waveform.vm
 import android.Manifest
 import android.animation.ValueAnimator
 import android.app.Application
-import android.util.Log
+import androidx.core.animation.doOnEnd
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.*
 import dev.luckybet100.waveform.R
@@ -69,22 +69,26 @@ class MainViewModelImpl(
     private var animation: ValueAnimator? = null
 
     private fun setupResultFromRecord() {
-        val oldState = waveFormState.value ?: return
-        val amplitudes = (oldState as? WaveFormViewModel.State.Idle)?.amplitudes
-            ?: (oldState as? WaveFormViewModel.State.Recording)?.amplitudes ?: return
-        animation?.cancel()
-        animation = ValueAnimator.ofFloat(0f, 1f).apply {
-            addUpdateListener {
-                waveFormState.value = WaveFormViewModel.State.Result(
-                    amplitudes,
-                    oldState,
-                    it.animatedFraction,
-                    1f,
-                    0f
-                )
+        runAnimation {
+            val oldState = waveFormState.value
+            val amplitudes = (oldState as? WaveFormViewModel.State.Idle)?.amplitudes
+                ?: (oldState as? WaveFormViewModel.State.Recording)?.amplitudes
+            if (amplitudes != null && oldState != null) {
+                animation?.cancel()
+                animation = ValueAnimator.ofFloat(0f, 1f).apply {
+                    addUpdateListener {
+                        waveFormState.value = WaveFormViewModel.State.Result(
+                            amplitudes,
+                            oldState,
+                            it.animatedFraction,
+                            1f,
+                            0f
+                        )
+                    }
+                    duration = 300
+                    start()
+                }
             }
-            duration = 300
-            start()
         }
     }
 
@@ -119,51 +123,53 @@ class MainViewModelImpl(
     override fun notifyPlayButtonClicked() {
         when (state.value) {
             State.Result -> {
-                val oldState = waveFormState.value ?: return
-                if (oldState !is WaveFormViewModel.State.Result)
-                    return
-                mediaHelper.startPlayer()
-                setPlayingState()
-
-                animation?.cancel()
-                animation = ValueAnimator.ofFloat(0f, 1f).apply {
-                    addUpdateListener {
-                        val nowState = waveFormState.value ?: return@addUpdateListener
-                        if (nowState !is WaveFormViewModel.State.Result)
-                            return@addUpdateListener
-                        waveFormState.value = WaveFormViewModel.State.Result(
-                            oldState.amplitudes,
-                            oldState.prevState,
-                            1f,
-                            nowState.playProgress,
-                            it.animatedFraction
-                        )
+                runAnimation {
+                    val oldState = waveFormState.value
+                    if (oldState is WaveFormViewModel.State.Result) {
+                        mediaHelper.startPlayer()
+                        setPlayingState()
+                        animation?.cancel()
+                        ValueAnimator.ofFloat(0f, 1f).apply {
+                            addUpdateListener {
+                                val nowState = waveFormState.value ?: return@addUpdateListener
+                                if (nowState !is WaveFormViewModel.State.Result)
+                                    return@addUpdateListener
+                                waveFormState.value = WaveFormViewModel.State.Result(
+                                    oldState.amplitudes,
+                                    oldState.prevState,
+                                    1f,
+                                    nowState.playProgress,
+                                    it.animatedFraction
+                                )
+                            }
+                            duration = 300
+                            start()
+                        }
                     }
-                    duration = 300
-                    start()
                 }
-
             }
             State.Playing -> {
-                val oldState = waveFormState.value ?: return
-                if (oldState !is WaveFormViewModel.State.Result)
-                    return
-                animation?.cancel()
-                animation = ValueAnimator.ofFloat(0f, 1f).apply {
-                    addUpdateListener {
-                        waveFormState.value = WaveFormViewModel.State.Result(
-                            oldState.amplitudes,
-                            oldState.prevState,
-                            1f,
-                            oldState.playProgress,
-                            1f - it.animatedFraction
-                        )
+                runAnimation {
+                    val oldState = waveFormState.value
+                    if (oldState is WaveFormViewModel.State.Result) {
+                        animation?.cancel()
+                        animation = ValueAnimator.ofFloat(0f, 1f).apply {
+                            addUpdateListener {
+                                waveFormState.value = WaveFormViewModel.State.Result(
+                                    oldState.amplitudes,
+                                    oldState.prevState,
+                                    1f,
+                                    if (it.animatedFraction == 1f) 1f else oldState.playProgress,
+                                    1f - it.animatedFraction
+                                )
+                            }
+                            duration = 300
+                            start()
+                        }
+                        mediaHelper.stopPlayer()
+                        setResultState()
                     }
-                    duration = 300
-                    start()
                 }
-                mediaHelper.stopPlayer()
-                setResultState()
             }
         }
     }
@@ -178,6 +184,17 @@ class MainViewModelImpl(
                 oldAmplitudes + if (value >= 0) listOf(value) else emptyList(),
                 offset
             )
+        }
+    }
+
+    private fun runAnimation(newAnimator: () -> Unit) {
+        val animation = animation
+        if (animation?.isRunning == true) {
+            animation.doOnEnd {
+                newAnimator.invoke()
+            }
+        } else {
+            newAnimator.invoke()
         }
     }
 
@@ -221,18 +238,20 @@ class MainViewModelImpl(
         if (menu.value != null && menu.value != MainViewModel.Menu.Record)
             menu.value = MainViewModel.Menu.Record
         state.value = State.Start
-        val oldState = waveFormState.value ?: WaveFormViewModel.State.None
-        animation?.cancel()
-        animation = ValueAnimator.ofFloat(0f, 1f).apply {
-            addUpdateListener {
-                waveFormState.value = WaveFormViewModel.State.Idle(
-                    emptyList(),
-                    oldState,
-                    it.animatedFraction
-                )
+        runAnimation {
+            val oldState = waveFormState.value ?: WaveFormViewModel.State.None
+            animation?.cancel()
+            animation = ValueAnimator.ofFloat(0f, 1f).apply {
+                addUpdateListener {
+                    waveFormState.value = WaveFormViewModel.State.Idle(
+                        emptyList(),
+                        oldState,
+                        it.animatedFraction
+                    )
+                }
+                duration = 300
+                start()
             }
-            duration = 300
-            start()
         }
     }
 
