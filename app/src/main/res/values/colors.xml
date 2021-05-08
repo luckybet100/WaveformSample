@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">@color/colorStart</color>
+    <color name="colorPrimaryDark">@color/colorStart</color>
+    <color name="colorAccent">@color/colorStart</color>
+    <color name="colorStart">#4965F2</color>
+    <color name="colorRecording">#F23D5B</color>
+    <color name="colorButtons">#FFFFFF</color>
+    <color name="colorResult">#36B293</color>
+    <color name="colorWaveform">#FFFFFF</color>
+</resources>

@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">WaveformSample</string>
+    <string name="start_record">Record</string>
+    <string name="finish_record">Finish</string>
+    <string name="play_record">Play</string>
+    <string name="pause_record">Pause</string>
+    <string name="reset_record">Reset</string>
+</resources>
